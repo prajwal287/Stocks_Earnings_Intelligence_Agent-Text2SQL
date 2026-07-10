@@ -1,0 +1,22 @@
+[project]
+name = "earnings-intelligence-agent"
+version = "0.1.0"
+description = "SEC EDGAR-based Agentic RAG system for financial Q&A"
+requires-python = ">=3.9"
+dependencies = [
+    "openai>=1.30.0",
+    "python-dotenv>=1.0.0",
+    "minsearch>=0.0.2",
+    "requests>=2.31.0",
+    "jupytext>=1.16.0",
+    "jupyter>=1.1.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "jupyter>=1.0.0",
+    "ipython>=8.0.0",
+]
+
+[tool.uv]
+python-downloads = "automatic"
