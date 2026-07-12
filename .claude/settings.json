@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(psql -U postgres -h localhost -d financial_data -c \"\\\\d sec_filings.filing_text_chunks\")",
+      "Bash(psql -U postgres -h localhost -d financial_data -c \"SELECT COUNT\\(*\\) as chunk_count FROM sec_filings.filing_text_chunks;\")",
+      "Bash(psql -U postgres -h localhost -d financial_data -c \"SELECT DISTINCT section, COUNT\\(*\\) as count FROM sec_filings.filing_text_chunks GROUP BY section ORDER BY count DESC;\")",
+      "Bash(psql -U postgres -h localhost -d financial_data -c \"SELECT ticker, year, section, LEFT\\(text, 80\\) FROM sec_filings.filing_text_chunks LIMIT 3;\")",
+      "Bash(uv run *)",
+      "Bash(awk '{print $9, \"\\(\" $5 \"\\)\"}')",
+      "Bash(uv pip *)"
+    ]
+  }
+}
