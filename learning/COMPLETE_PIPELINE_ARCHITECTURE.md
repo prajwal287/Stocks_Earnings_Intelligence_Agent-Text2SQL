@@ -1,8 +1,8 @@
-# Complete Financial Analysis Pipeline: Phases 1-3
+# Complete Earnings Intelligence Agent: Phases 1-5
 
 ## Executive Summary
 
-This pipeline extracts **real, official financial data** from SEC XBRL API, loads it into DuckDB, and integrates with RAG for AI-powered financial analysis.
+End-to-end pipeline for financial analysis: Extracts official SEC data via XBRL API, loads into PostgreSQL, extracts MD&A text from 10-K PDFs, and integrates semantic RAG with LLM for intelligent financial Q&A. Includes production REST API with real-time monitoring and evaluation dashboards.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
