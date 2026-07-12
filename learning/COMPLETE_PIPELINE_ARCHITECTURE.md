@@ -122,6 +122,10 @@ learning/
 
 Raw financial data → Structured database with SQL queries
 
+**Two notebooks:**
+- **PHASE_2_DLT_DUCKDB.ipynb** - Load XBRL numbers (financial metrics)
+- **PHASE_2B_LOAD_FILING_TEXT.ipynb** - Load MD&A text (filing narratives)
+
 ### Architecture
 
 ```
@@ -208,9 +212,35 @@ GROUP BY ticker;
 
 ```
 learning/
-├── PHASE_2_DLT_DUCKDB.ipynb          # Main notebook
-├── PHASE_2_GUIDE.md                  # Detailed guide
-└── financial_data_for_rag.json       # Exported data
+├── PHASE_2_DLT_DUCKDB.ipynb              # Load financial metrics
+├── PHASE_2_GUIDE.md                      # Complete Phase 2 & 2B guide
+├── fetch_filing_text.py                  # MD&A extraction module
+├── PHASE_2B_LOAD_FILING_TEXT.ipynb       # Load filing text
+└── financial_data_for_rag.json           # Exported data
+```
+
+### Phase 2B: Download & Load Filing Text
+
+After Phase 2 loads the XBRL numbers, Phase 2B downloads actual SEC documents and extracts MD&A sections.
+
+**Tables created:**
+1. `financial_metrics` (Phase 2) - XBRL financial data
+2. `sec_filings_metadata` (Phase 2) - Filing metadata  
+3. `filing_text_chunks` (Phase 2B) - MD&A narrative text
+
+**Phase 2B Pipeline:**
+```
+SEC Filing URL (from Phase 2)
+    ↓
+Download HTML from SEC EDGAR
+    ↓
+Extract MD&A section (Item 2 for 10-Q, Item 7 for 10-K)
+    ↓
+Chunk text (1000 chars, 100 char overlap)
+    ↓
+Load into DuckDB with dlt
+    ↓
+Create indexes for fast RAG search
 ```
 
 ### Phase 2 Key Benefits

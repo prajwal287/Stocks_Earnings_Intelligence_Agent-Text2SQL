@@ -1,222 +1,244 @@
-# Phase 2: Load SEC Data into DuckDB with dlt
+# Phase 2: Complete Data Loading - XBRL Numbers + Filing Text
 
 ## Overview
 
-**Phase 2** takes real financial data from SEC XBRL API (Phase 1) and loads it into DuckDB using **dlt** (data load tool).
+**Single notebook for complete Phase 2 setup:**
+- **Phase 2A:** Load XBRL financial metrics (Revenues, Net Income, Assets, etc.)
+- **Phase 2B:** Download & extract SEC filing text (MD&A sections)
 
-### What Happens:
+Both load into the same DuckDB database, creating 3 tables:
+1. `financial_metrics` - Structured XBRL data
+2. `sec_filings_metadata` - Filing dates and URLs
+3. `filing_text_chunks` - MD&A narrative text
+
+---
+
+## Quick Start
+
+### Run One Notebook (5 steps, ~7 minutes)
+
+```bash
+cd /Users/prajwalchambenandeeshappa/Github_Repos/Stocks_Earnings_Intelligence_Agent-Text2SQL
+source .venv/bin/activate
+jupyter notebook learning/PHASE_2_COMPLETE_DLT_DUCKDB.ipynb
+```
+
+**What it does:**
+1. Connect to SEC API (Phase 1 results)
+2. Load financial metrics (~2 min)
+3. Load filing metadata
+4. Download & extract MD&A (~5 min for 3 filings)
+5. Create indexes & verify data
+
+---
+
+## Architecture
+
+### Phase 2A: Load XBRL Metrics
 
 ```
-SEC API Endpoints (Phase 1)
+SEC XBRL API (Phase 1)
     ↓
-[Real Financial Data]
+Fetch 6 metrics × 3 companies × 10 periods
     ↓
-Transform & Type Hints
+Transform (add types, timestamps)
     ↓
 dlt Pipeline
     ↓
-DuckDB Tables ← YOU ARE HERE
+DuckDB: financial_metrics table
+DuckDB: sec_filings_metadata table
+```
+
+### Phase 2B: Download & Extract Filing Text
+
+```
+sec_filings_metadata table (URLs from Phase 2A)
     ↓
-SQL Queries + RAG (Phase 3)
+Download HTML from SEC EDGAR
+    ↓
+Extract MD&A section (Item 2 for 10-Q, Item 7 for 10-K)
+    ↓
+Chunk text (1000 chars, 100 char overlap)
+    ↓
+dlt Pipeline
+    ↓
+DuckDB: filing_text_chunks table
 ```
 
 ---
 
-## Key Concepts
+## Database Schema
 
-### dlt (Data Load Tool)
+### Table 1: financial_metrics (Phase 2A)
 
-**What it does:**
-- Automatically creates tables from Python data
-- Handles schema inference and type conversion
-- Manages duplicates automatically
-- Tracks load history
-- Perfect for DuckDB
+```sql
+SELECT * FROM sec_filings.financial_metrics LIMIT 1;
+```
 
-**Why dlt?**
-- No manual SQL CREATE TABLE statements
-- Automatic duplicate detection
-- Schema management built-in
-- Incremental loading support
-- Type safety
+```
+ticker            | MSFT
+concept           | Revenues
+period_end        | 2010-12-31
+filing_date       | 2011-01-27
+form              | 10-Q
+value             | 36148000000
+load_timestamp    | 2026-07-12T08:40:00
+```
 
-### DuckDB
+**Indexes:** (ticker), (concept), (period_end), (ticker, concept)
 
-**Why DuckDB?**
-- File-based (no database server needed)
-- SQL queries on local data
-- Fast analytics
-- Pandas integration
-- Perfect for local development
+### Table 2: sec_filings_metadata (Phase 2A)
+
+```sql
+SELECT * FROM sec_filings.sec_filings_metadata LIMIT 1;
+```
+
+```
+ticker            | AAPL
+form              | 10-Q
+filing_date       | 2026-05-01
+period_end        | 2026-03-29
+accession_number  | 0000320193-26-000013
+filing_url        | https://www.sec.gov/Archives/...
+load_timestamp    | 2026-07-12T08:40:00
+```
+
+### Table 3: filing_text_chunks (Phase 2B)
+
+```sql
+SELECT * FROM sec_filings.filing_text_chunks LIMIT 1;
+```
+
+```
+ticker            | AAPL
+form              | 10-Q
+filing_date       | 2026-05-01
+period_end        | 2026-03-29
+accession_number  | 0000320193-26-000013
+section           | MD&A
+chunk_id          | 1
+text              | "Apple Inc. reports quarterly results..."
+text_length       | 987
+extracted_at      | 2026-07-12T08:40:00
+```
+
+**Indexes:** (ticker), (filing_date), (ticker, filing_date)
 
 ---
 
 ## What the Notebook Does
 
-### Part 1: Fetch Data from SEC API
-- Uses the SEC API modules from Phase 1
-- Fetches 6 key financial metrics (Revenues, NetIncome, Operating Income, Assets, Liabilities, Equity)
-- Gets filing metadata for all companies
+### Part 1: Setup & Imports
+- Import dlt, DuckDB, SEC API modules
+- Setup logging
 
-### Part 2: Transform Data
-- Adds load timestamps
-- Converts to proper types
-- Ensures numeric fields are integers
-- Prepares for dlt loading
+### Part 2A: Phase 2A - Load XBRL Metrics
+- Fetch 6 metrics for 3 companies
+- Transform for dlt
+- Load financial_metrics table
+- Load sec_filings_metadata table
 
-### Part 3: Create dlt Pipeline
-- Creates a pipeline named `financial_data_pipeline`
-- Destination: DuckDB
-- Dataset: `sec_filings`
+### Part 3: Phase 2B - Download Filing Text
+- Get filing URLs from Phase 2A
+- Download 10-Q/10-K documents from SEC
+- Extract MD&A sections
+- Chunk text for RAG
+- Load filing_text_chunks table
 
-### Part 4: Load Data into DuckDB
-- Creates table: `financial_metrics` (time series data)
-- Creates table: `sec_filings_metadata` (filing dates and URLs)
+### Part 4: Verify Data
+- Check all tables exist
+- Show record counts
+- Display summary statistics
 
-### Part 5: Verify Data
-- Connects to DuckDB
-- Shows table structures
-- Displays sample data
+### Part 5: Create Indexes
+- Add indexes on ticker, concept, period_end
+- Create composite indexes for fast queries
 
-### Part 6: Create Indexes
-- Index on ticker (company lookups)
-- Index on concept (metric lookups)
-- Index on period_end (time series queries)
-- Composite index on (ticker, concept)
+### Part 6: Example Queries
+- Revenue trends
+- Financial health snapshots
 
-### Part 7: Example Queries
-- Apple's revenue trend
-- Net income comparison across companies
-- Total assets by company
-- Filing timeline
-- Financial health snapshot
-
-### Part 8: Export for RAG
-- Exports recent financial data to JSON
-- Saved as `financial_data_for_rag.json`
-- Ready for Phase 3 integration
+### Part 7: Complete!
+- Summary of what was loaded
+- Ready for Module 1 RAG
 
 ---
 
-## Running the Notebook
+## Detailed Usage
 
-### Option 1: Run in Jupyter (Recommended)
+### Run All Cells
 
-```bash
-# Navigate to project directory
-cd /Users/prajwalchambenandeeshappa/Github_Repos/Stocks_Earnings_Intelligence_Agent-Text2SQL
-
-# Activate virtual environment
-source .venv/bin/activate
-
-# Start Jupyter
-jupyter notebook
-
-# Navigate to: learning/PHASE_2_DLT_DUCKDB.ipynb
-```
-
-### Option 2: Run Individual Cells
-
-You can run the notebook cell by cell, or copy specific cells to a Python script.
-
-### Option 3: Convert to Python Script
-
-```bash
-jupyter nbconvert --to script learning/PHASE_2_DLT_DUCKDB.ipynb
-python learning/PHASE_2_DLT_DUCKDB.py
-```
-
----
-
-## Expected Output
-
-When you run the notebook, you should see:
+Execute the notebook cells in order. Each section has clear output showing progress.
 
 ```
-✅ Dependencies loaded
-   dlt version: 1.28.2
-   DuckDB available
+✅ All imports successful
+🚀 PHASE 2A: Loading XBRL Financial Metrics
+   Fetching from SEC API...
+📊 MSFT...
+📊 AAPL...
+📊 GOOGL...
+✅ Phase 2A: Data fetched
+   Metrics: 180 records
+   Filings: 15 records
 
-🚀 Phase 2: Loading SEC Data into DuckDB
+✅ Data transformed
 
-📊 Companies: MSFT, AAPL, GOOGL
-📈 Metrics: Revenues, NetIncomeLoss, OperatingIncomeLoss...
+📝 Loading metrics...
+   ✅ 180 metric records loaded
+📝 Loading filing metadata...
+   ✅ 15 filing records loaded
 
-Fetching data from SEC XBRL API...
+✅ Phase 2A complete!
 
-[Progress output...]
+🚀 PHASE 2B: Downloading & Extracting Filing Text
+Processing 3 filings...
 
-✅ Data collection complete!
-   Total metric records: 180
-   Total filing records: 15
+[1/3] MSFT 10-Q 2026-04-29
+   ✅ 45 chunks
+[2/3] AAPL 10-Q 2026-05-01
+   ✅ 38 chunks
+[3/3] GOOGL 10-Q 2026-04-30
+   ✅ 42 chunks
 
-✅ dlt pipeline created
-   Pipeline name: financial_data_pipeline
-   Destination: DuckDB
-   Dataset: sec_filings
-   Database file: ~/.dlt/pipelines/financial_data_pipeline/sec_filings.duckdb
+✅ Extraction complete: 3 successful, 0 failed
 
-📊 Loading financial metrics into DuckDB...
-✅ Metrics loaded!
-   Records loaded: 180
-   Table: financial_metrics
+📝 Prepared 125 chunks for loading...
+✅ 125 chunks loaded into filing_text_chunks table
 
-📄 Loading SEC filings metadata into DuckDB...
-✅ Filings loaded!
-   Records loaded: 15
-   Table: sec_filings_metadata
+DATABASE SUMMARY
+===============
+✅ financial_metrics: 180 records
+✅ sec_filings_metadata: 15 records
+✅ filing_text_chunks: 125 records
 
-📂 Database location: /Users/.../.dlt/pipelines/financial_data_pipeline/sec_filings.duckdb
-
-📊 Tables in database:
-   - dlt_loads
-   - financial_metrics
-   - sec_filings_metadata
-
-[Query Results...]
-
-✅ PHASE 2 SUMMARY
-📊 Database Statistics:
-   Metrics: 180 records, 3 companies, 6 concepts
-   Filings: 15 records, 3 companies, 2 forms
-
-✅ WHAT WE ACCOMPLISHED:
-1. ✅ Fetched real SEC data from 3 endpoints
-2. ✅ Transformed data for dlt
-3. ✅ Loaded into DuckDB using dlt pipeline
-4. ✅ Created optimized indexes
-5. ✅ Ran example queries
-6. ✅ Exported data for RAG pipeline
+✅ PHASE 2 COMPLETE!
 ```
 
 ---
 
 ## Database Location
 
-The DuckDB database is created at:
 ```
 ~/.dlt/pipelines/financial_data_pipeline/sec_filings.duckdb
 ```
 
-Expand `~` to your home directory. On your system:
+On your system:
 ```
 /Users/prajwalchambenandeeshappa/.dlt/pipelines/financial_data_pipeline/sec_filings.duckdb
 ```
 
-### Connect to Database Manually
+### Connect Manually
 
 ```python
 import duckdb
 
-# Connect to the database
 conn = duckdb.connect('/Users/prajwalchambenandeeshappa/.dlt/pipelines/financial_data_pipeline/sec_filings.duckdb')
 
-# Run queries
+# Query metrics
 result = conn.execute("""
-    SELECT ticker, concept, COUNT(*) as count
+    SELECT ticker, COUNT(*) as records
     FROM sec_filings.financial_metrics
-    GROUP BY ticker, concept
-    ORDER BY ticker
+    GROUP BY ticker
 """).df()
 
 print(result)
@@ -224,254 +246,145 @@ print(result)
 
 ---
 
-## Tables Created
+## Common Queries
 
-### Table 1: `financial_metrics`
+### Query 1: Revenue Trend
 
-Contains all financial metrics over time.
-
-**Columns:**
-- `ticker` (TEXT) - Stock ticker
-- `concept` (TEXT) - Financial concept (Revenues, NetIncomeLoss, etc.)
-- `period_end` (DATE) - End date of the reporting period
-- `filing_date` (DATE) - Date the filing was submitted to SEC
-- `form` (TEXT) - Filing type (10-Q, 10-K, etc.)
-- `value` (INTEGER) - Numeric value in USD
-- `load_timestamp` (TIMESTAMP) - When data was loaded
-
-**Example Query:**
 ```sql
 SELECT 
     ticker,
     period_end,
     value / 1000000000 as revenue_billions
 FROM sec_filings.financial_metrics
-WHERE ticker = 'AAPL' AND concept = 'Revenues'
+WHERE concept = 'Revenues'
+  AND ticker = 'AAPL'
 ORDER BY period_end DESC
 LIMIT 5;
 ```
 
-### Table 2: `sec_filings_metadata`
-
-Contains filing metadata and document links.
-
-**Columns:**
-- `ticker` (TEXT) - Stock ticker
-- `form` (TEXT) - Filing type (10-Q, 10-K)
-- `filing_date` (DATE) - When filed
-- `period_end` (DATE) - End of reporting period
-- `accession_number` (TEXT) - SEC's unique filing ID
-- `filing_url` (TEXT) - URL to the filing document
-- `load_timestamp` (TIMESTAMP) - When data was loaded
-
-**Example Query:**
-```sql
-SELECT 
-    ticker,
-    form,
-    filing_date,
-    accession_number
-FROM sec_filings.sec_filings_metadata
-WHERE ticker = 'MSFT'
-ORDER BY filing_date DESC
-LIMIT 3;
-```
-
----
-
-## Common Queries
-
-### Query 1: Revenue Over Time for One Company
-
-```sql
-SELECT 
-    period_end,
-    value / 1000000000 as revenue_billions
-FROM sec_filings.financial_metrics
-WHERE ticker = 'AAPL' AND concept = 'Revenues'
-ORDER BY period_end DESC
-LIMIT 10;
-```
-
-### Query 2: Compare Companies (Most Recent)
+### Query 2: Financial Snapshot
 
 ```sql
 SELECT 
     ticker,
-    concept,
-    value / 1000000000 as value_billions,
-    period_end
+    MAX(CASE WHEN concept = 'Revenues' THEN value END) / 1000000000 as revenue_b,
+    MAX(CASE WHEN concept = 'NetIncomeLoss' THEN value END) / 1000000000 as net_income_b,
+    ROUND(
+        MAX(CASE WHEN concept = 'NetIncomeLoss' THEN value END) * 100.0 
+        / MAX(CASE WHEN concept = 'Revenues' THEN value END)
+    , 1) as profit_margin_pct
 FROM sec_filings.financial_metrics
-WHERE concept = 'Revenues'
-  AND period_end >= DATE_SUB(CURRENT_DATE, INTERVAL 365 DAY)
-ORDER BY period_end DESC, ticker;
-```
-
-### Query 3: Financial Ratios
-
-```sql
-SELECT 
-    ticker,
-    MAX(period_end) as period,
-    MAX(CASE WHEN concept = 'NetIncomeLoss' THEN value END) * 100.0 /
-    MAX(CASE WHEN concept = 'Revenues' THEN value END) as profit_margin_pct,
-    MAX(CASE WHEN concept = 'Assets' THEN value END) / 1000000000 as assets_billions
-FROM sec_filings.financial_metrics
-WHERE concept IN ('NetIncomeLoss', 'Revenues', 'Assets')
+WHERE concept IN ('Revenues', 'NetIncomeLoss')
 GROUP BY ticker
 ORDER BY ticker;
 ```
 
-### Query 4: Check What's Loaded
+### Query 3: Get Filing Text for RAG Context
 
 ```sql
-SELECT 
-    COUNT(*) as total_records,
-    COUNT(DISTINCT ticker) as companies,
-    COUNT(DISTINCT concept) as metrics,
-    COUNT(DISTINCT form) as form_types,
-    MIN(period_end) as earliest_data,
-    MAX(period_end) as latest_data
-FROM sec_filings.financial_metrics;
+-- Get all MD&A chunks for Apple, concatenated
+SELECT STRING_AGG(text, ' ')
+FROM sec_filings.filing_text_chunks
+WHERE ticker = 'AAPL' 
+  AND filing_date = (
+      SELECT MAX(filing_date) 
+      FROM sec_filings.filing_text_chunks 
+      WHERE ticker = 'AAPL'
+  )
+ORDER BY chunk_id;
 ```
+
+### Query 4: Search Filing Text
+
+```sql
+-- Find chunks mentioning specific topics
+SELECT ticker, chunk_id, SUBSTR(text, 1, 200) as preview
+FROM sec_filings.filing_text_chunks
+WHERE text ILIKE '%liquidity%'
+  AND ticker = 'MSFT'
+LIMIT 5;
+```
+
+---
+
+## Files
+
+### Main Notebook
+- **PHASE_2_COMPLETE_DLT_DUCKDB.ipynb** - Single notebook with Phase 2A + 2B (all in one place)
+
+### Supporting Modules
+- **sec_api_orchestrator.py** - Unified SEC API access (Phase 1)
+- **fetch_filing_text.py** - MD&A extraction for Phase 2B
+
+### Documentation
+- **PHASE_2_GUIDE.md** - This file
+- **COMPLETE_PIPELINE_ARCHITECTURE.md** - Full system overview
 
 ---
 
 ## Indexes Created
 
-The notebook creates the following indexes for fast queries:
+For fast queries:
 
 ```
-idx_metrics_ticker          - Fast company lookups
-idx_metrics_concept         - Fast metric lookups
-idx_metrics_period          - Fast time series queries
-idx_metrics_form            - Fast filtering by form type
-idx_metrics_ticker_concept  - Fast company + metric queries
-```
-
----
-
-## Data Flow Summary
-
-### Input (Phase 1 - SEC API)
-```
-SEC XBRL API
-├── Endpoint 1: Company Facts (all financial data)
-├── Endpoint 2: Company Concept (specific metrics over time)
-└── Endpoint 3: Submissions (filing metadata)
-```
-
-### Processing (Phase 2 - This Notebook)
-```
-Extract from SEC
-    ↓
-Transform (add types, timestamps)
-    ↓
-dlt Pipeline
-    ↓
-DuckDB Tables
-    ↓
-Create Indexes
-    ↓
-Verify + Test Queries
-```
-
-### Output (Phase 2 - Ready for Phase 3)
-```
-DuckDB Database
-├── financial_metrics (180 records)
-├── sec_filings_metadata (15 records)
-└── Indexed for fast queries
-
-JSON Export
-└── financial_data_for_rag.json (for RAG pipeline)
+idx_metrics_ticker              - Company lookups
+idx_metrics_concept             - Metric lookups
+idx_metrics_period              - Time series queries
+idx_metrics_ticker_concept      - Combined company + metric
+idx_chunks_ticker               - Filing text by company
 ```
 
 ---
 
 ## Troubleshooting
 
-### Issue: Module not found (sec_api_*)
+### Issue: "ModuleNotFoundError: No module named 'sec_api_orchestrator'"
 
-**Solution:** Make sure you're running from the correct directory and the path is in sys.path.
-
+**Solution:** Make sure sys.path is set correctly in notebook:
 ```python
-import sys
 sys.path.insert(0, '/Users/prajwalchambenandeeshappa/Github_Repos/Stocks_Earnings_Intelligence_Agent-Text2SQL/learning')
 ```
 
-### Issue: dlt or DuckDB not installed
+### Issue: "Failed to download filing"
 
-**Solution:** Install dependencies using uv:
+**Solution:** SEC filing URLs may be temporary. The notebook logs which failed - you can manually adjust URLs if needed.
 
+### Issue: DuckDB file not found
+
+**Solution:** Run the notebook fully. dlt creates the database automatically. Check path:
 ```bash
-cd /Users/prajwalchambenandeeshappa/Github_Repos/Stocks_Earnings_Intelligence_Agent-Text2SQL
-source .venv/bin/activate
-uv sync
-```
-
-### Issue: Database file not found
-
-**Solution:** The database is created automatically when the notebook runs. Check the path:
-
-```bash
-ls ~/.dlt/pipelines/financial_data_pipeline/
-```
-
-### Issue: Duplicate key error when running twice
-
-**Solution:** dlt handles duplicates automatically with `write_disposition="append"`. You can safely re-run the notebook.
-
-To start fresh:
-
-```bash
-rm -rf ~/.dlt/pipelines/financial_data_pipeline/
+ls -la ~/.dlt/pipelines/financial_data_pipeline/
 ```
 
 ---
 
-## Next Steps: Phase 3
+## Performance
 
-Once Phase 2 is complete:
-
-1. ✅ Financial data is in DuckDB
-2. ✅ Can run SQL queries
-3. ✅ Data exported as JSON
-
-**Next:** Phase 3 - RAG Pipeline Integration
-
-See `PHASE_3_RAG_PIPELINE.ipynb` to:
-- Connect to DuckDB from Claude AI
-- Query financial data in prompts
-- Generate narratives based on financials
-- Answer questions about earnings and trends
+| Phase | Task | Time | Output |
+|-------|------|------|--------|
+| **2A** | Fetch XBRL metrics | ~2 min | 180 records, 15 filings |
+| **2B** | Download & extract text | ~5 min | 125+ text chunks |
+| **Indexes** | Create indexes | <1 min | 5 indexes |
+| **Total** | Complete Phase 2 | ~7 min | Ready for Module 1 |
 
 ---
 
-## Key Learnings from Phase 2
+## Next: Module 1 - Agentic RAG
 
-1. **dlt is powerful** - Automatic schema management, type inference, duplicate detection
-2. **DuckDB is fast** - Local file database with SQL queries
-3. **Indexes matter** - Even small datasets benefit from proper indexing
-4. **Combine all endpoints** - Orchestrator class makes it easy to get all data types
-5. **Export early** - JSON export lets you use data in other tools (RAG, notebooks, etc.)
+Once Phase 2 completes, you have:
+✅ Structured financial data (XBRL numbers)
+✅ Narrative business context (MD&A text)
+✅ Indexed for fast search
+✅ Ready for RAG queries
 
----
-
-## Files Related to Phase 2
-
-```
-learning/
-├── PHASE_2_DLT_DUCKDB.ipynb          ← Main notebook (THIS)
-├── PHASE_2_GUIDE.md                  ← This guide
-├── sec_api_orchestrator.py           ← Data fetching
-├── sec_api_endpoint1.py              ← All facts
-├── sec_api_endpoint2.py              ← Specific metrics
-├── sec_api_endpoint3.py              ← Filing metadata
-├── SEC_API_COMPLETE_GUIDE.md         ← Phase 1 reference
-└── financial_data_for_rag.json       ← Output (exported data)
-```
+See: `MODULE_1_AGENTIC_RAG.ipynb` (coming next)
 
 ---
 
-**Ready to run Phase 2?** Open `PHASE_2_DLT_DUCKDB.ipynb` in Jupyter and execute the cells! 🚀
+## Key Learnings
+
+1. **dlt handles complexity** - Schema management, duplicates, types
+2. **DuckDB is fast** - SQL queries on local data
+3. **Two data types matter** - Numbers (XBRL) + narratives (MD&A)
+4. **Indexes critical** - Even small datasets benefit from proper indexing
+5. **Single source of truth** - Combined notebook easier to maintain

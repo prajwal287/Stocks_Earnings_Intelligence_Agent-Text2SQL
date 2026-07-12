@@ -16,7 +16,15 @@
       "Bash(python PHASE_1_REAL_SEC_INTEGRATION.py)",
       "Bash(python /Users/prajwalchambenandeeshappa/Github_Repos/Stocks_Earnings_Intelligence_Agent-Text2SQL/test_polygon_endpoints.py)",
       "Bash(uv sync *)",
-      "Bash(awk '{print $9, \"\\(\" $5 \"\\)\"}')"
+      "Bash(awk '{print $9, \"\\(\" $5 \"\\)\"}')",
+      "Bash(python3 -m json.tool /Users/prajwalchambenandeeshappa/Github_Repos/Stocks_Earnings_Intelligence_Agent-Text2SQL/learning/PHASE_2B_FILING_TEXT_INGESTION.ipynb)",
+      "Bash(python3 -m json.tool /Users/prajwalchambenandeeshappa/Github_Repos/Stocks_Earnings_Intelligence_Agent-Text2SQL/learning/PHASE_2B_LOAD_FILING_TEXT.ipynb)",
+      "Bash(python3 -m json.tool /Users/prajwalchambenandeeshappa/Github_Repos/Stocks_Earnings_Intelligence_Agent-Text2SQL/learning/PHASE_2_COMPLETE_DLT_DUCKDB.ipynb)",
+      "Bash(python3 -m json.tool /Users/prajwalchambenandeeshappa/Github_Repos/Stocks_Earnings_Intelligence_Agent-Text2SQL/learning/PHASE_1_SEC_API_EXTRACTION.ipynb)",
+      "Bash(cat)",
+      "Bash(python3 /tmp/fix_phase2.py)",
+      "Bash(psql -U postgres -h localhost -c \"CREATE DATABASE financial_data;\")",
+      "Bash(psql -U postgres -h localhost -d financial_data -c ' *)"
     ]
   }
 }
