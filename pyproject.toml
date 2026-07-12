@@ -1,22 +1,18 @@
 [project]
-name = "earnings-intelligence-agent"
+name = "stocks-earnings-intelligence"
 version = "0.1.0"
-description = "SEC EDGAR-based Agentic RAG system for financial Q&A"
-requires-python = ">=3.9"
+description = "Financial Analysis with SEC Filings, dlt, and RAG"
+requires-python = ">=3.11"
+
 dependencies = [
-    "openai>=1.30.0",
-    "python-dotenv>=1.0.0",
-    "minsearch>=0.0.2",
     "requests>=2.31.0",
-    "jupytext>=1.16.0",
-    "jupyter>=1.1.1",
-]
-
-[project.optional-dependencies]
-dev = [
+    "beautifulsoup4>=4.12.0",
+    "dlt[duckdb]>=0.4.0",
+    "python-dotenv>=1.0.0",
+    "openai>=1.0.0",
+    "minsearch>=0.2.0",
+    "duckdb>=0.9.0",
     "jupyter>=1.0.0",
-    "ipython>=8.0.0",
+    "ipykernel>=6.20.0",
+    "yfinance>=0.2.0",
 ]
-
-[tool.uv]
-python-downloads = "automatic"

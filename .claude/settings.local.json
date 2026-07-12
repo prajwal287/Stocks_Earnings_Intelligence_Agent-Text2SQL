@@ -9,7 +9,14 @@
       "Bash(/Users/prajwalchambenandeeshappa/.local/bin/uv sync *)",
       "Bash(/Users/prajwalchambenandeeshappa/.local/bin/uv run *)",
       "Skill(claude-api)",
-      "Skill(claude-api:*)"
+      "Skill(claude-api:*)",
+      "Bash(python3 -m venv .venv)",
+      "Bash(.venv/bin/python -c \"import dlt, duckdb, requests, bs4, openai; print\\('✅ All packages ready!'\\)\")",
+      "Bash(.venv/bin/python -m ipykernel install --user --name stocks-env --display-name \"Python \\(Stocks\\)\")",
+      "Bash(python PHASE_1_REAL_SEC_INTEGRATION.py)",
+      "Bash(python /Users/prajwalchambenandeeshappa/Github_Repos/Stocks_Earnings_Intelligence_Agent-Text2SQL/test_polygon_endpoints.py)",
+      "Bash(uv sync *)",
+      "Bash(awk '{print $9, \"\\(\" $5 \"\\)\"}')"
     ]
   }
 }
