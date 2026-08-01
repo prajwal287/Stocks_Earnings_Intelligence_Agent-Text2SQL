@@ -9,7 +9,9 @@
       "Bash(awk '{print $9, \"\\(\" $5 \"\\)\"}')",
       "Bash(uv pip *)",
       "Bash(sleep 15 && tail -100 /private/tmp/claude-501/-Users-prajwalchambenandeeshappa-Github_Repos-Stocks-Earnings-Intelligence-Agent-Text2SQL/fd4bebda-ee76-44ea-801b-800b7e1292c1/tasks/bcdlrcxp8.output 2>/dev/null | grep -A 50 \"FIXED CHUNK\" || echo \"Still running...\")",
-      "Read(//private/tmp/claude-501/-Users-prajwalchambenandeeshappa-Github_Repos-Stocks-Earnings-Intelligence-Agent-Text2SQL/fd4bebda-ee76-44ea-801b-800b7e1292c1/tasks/**)"
+      "Read(//private/tmp/claude-501/-Users-prajwalchambenandeeshappa-Github_Repos-Stocks-Earnings-Intelligence-Agent-Text2SQL/fd4bebda-ee76-44ea-801b-800b7e1292c1/tasks/**)",
+      "Bash(pg_isready -h localhost -p 5432)",
+      "Bash(psql -U postgres -h localhost financial_data -c \"SELECT COUNT\\(*\\) as chunks FROM sec_filings.filing_text_chunks;\")"
     ]
   }
 }
