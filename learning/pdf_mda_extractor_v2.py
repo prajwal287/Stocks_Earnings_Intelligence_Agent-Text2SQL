@@ -266,11 +266,13 @@ def chunk_text(text: str, chunk_size: int = 1000, overlap: int = 100) -> List[st
             search_chunk = text[start:end]
             last_period = search_chunk.rfind('.')
 
-            if last_period > chunk_size * 0.5:  # At least halfway through
+            # Only break at sentence if we're close to target size (80%+)
+            if last_period > chunk_size * 0.8:  # At least 80% through
                 end = start + last_period + 1
 
         chunk = text[start:end].strip()
-        if len(chunk) > 50:  # Only keep substantial chunks
+        # Keep chunks that are substantial (at least 300 chars)
+        if len(chunk) > 300:
             chunks.append(chunk)
 
         start = end - overlap

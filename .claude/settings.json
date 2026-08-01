@@ -7,7 +7,9 @@
       "Bash(psql -U postgres -h localhost -d financial_data -c \"SELECT ticker, year, section, LEFT\\(text, 80\\) FROM sec_filings.filing_text_chunks LIMIT 3;\")",
       "Bash(uv run *)",
       "Bash(awk '{print $9, \"\\(\" $5 \"\\)\"}')",
-      "Bash(uv pip *)"
+      "Bash(uv pip *)",
+      "Bash(sleep 15 && tail -100 /private/tmp/claude-501/-Users-prajwalchambenandeeshappa-Github_Repos-Stocks-Earnings-Intelligence-Agent-Text2SQL/fd4bebda-ee76-44ea-801b-800b7e1292c1/tasks/bcdlrcxp8.output 2>/dev/null | grep -A 50 \"FIXED CHUNK\" || echo \"Still running...\")",
+      "Read(//private/tmp/claude-501/-Users-prajwalchambenandeeshappa-Github_Repos-Stocks-Earnings-Intelligence-Agent-Text2SQL/fd4bebda-ee76-44ea-801b-800b7e1292c1/tasks/**)"
     ]
   }
 }
